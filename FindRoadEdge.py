@@ -2,11 +2,28 @@ from imgstream import Stream
 import cv2
 import numpy as np
 from math import *
+import time
 
 class RoadFinder:
 
 	def __init__(self):
-		pass
+		self.setRT()
+		self.setCam()
+
+
+	def setCam(self,focal=3.5E-3,fov=65,res=(720,1280)):
+		self.camFocal = focal
+		self.res = res
+		self.pix2dist = (focal * tan(pi/180*fov/2)) / (res[1] / 2)
+
+
+	def setRT(self,heightoffset=0.1,sideoffset=0,forwardoffset=0,yawoffset=0,pitchoffset=0,rolloffset=0):
+		self.camT = np.array([forwardoffset, heightoffset, sideoffset]) # x (forward), y (up), z (side)
+		invyaw = np.array([[cos(-yawoffset), -sin(-yawoffset), 0],[sin(-yawoffset), cos(-yawoffset), 0],[0, 0, 1]])
+		invpitch = np.array([[cos(-pitchoffset), 0, sin(-pitchoffset)],[0, 1, 0],[-sin(-pitchoffset), 0, cos(-pitchoffset)]])
+		invroll = np.array([[1, 0, 0],[0, cos(-rolloffset), -sin(-rolloffset)],[0, sin(-rolloffset), cos(-rolloffset)]])
+		self.camR = invroll * invpitch * invyaw
+
 
 	def filterColor(self, img, ranges=(255,25,255)):
 		frontpoint = (0.5, 0.1) # fractions of total resolution in (x,y)
@@ -24,15 +41,20 @@ class RoadFinder:
 		# mask = cv2.GaussianBlur(mask,(blursize,blursize),0)
 		return mask
 
-	# def filterBottom(self,img):
-	# 	bottomfrac = 0.7
-	# 	mask = np.zeros((img.shape[0],img.shape[1]))
-	# 	mask[int((1-bottomfrac)*img.shape[0]):img.shape[0],:] = 1
-	# 	return mask
+
+	def filterBottom(self,img):
+		bottomfrac = 0.7
+		mask = np.zeros((img.shape[0],img.shape[1]))
+		mask[int((1-bottomfrac)*img.shape[0]):img.shape[0],:] = 1
+		return mask
 
 
 	def filter(self, img):
-		mask = self.filterColor(img)
+		mask1 = self.filterBottom(img)
+		mask2 = self.filterColor(img)
+		# TODO: dynamics filtering, decreases range when the top of the img is active,
+		#       increases range when the bottom is active
+		mask = np.logical_and(mask1,mask2)
 		return mask
 
 
@@ -51,7 +73,7 @@ class RoadFinder:
 				maxcontour = contour
 
 		# Simplify contour
-		epsilon = 150
+		epsilon = 0.06*self.res[0]
 		simplecontour = cv2.approxPolyDP(maxcontour,epsilon,True)
 
 		# Visualization
@@ -62,10 +84,9 @@ class RoadFinder:
 		return simplecontour
 
 
-	def edge(self,hull):
-
+	def segment(self,hull):
 		# Find best segment in the hull
-		minlength = 1200
+		minlength = self.res[0]/2.5
 		best = 0
 		segment = None
 		segangle = 0
@@ -82,12 +103,48 @@ class RoadFinder:
 					elif angle < -pi/2:
 						angle += pi
 					# Choose best segment according to quality function
-					quality = cos(angle) * length
+					quality = cos(angle/2) * length
 					if quality > best:
 						best = quality
 						segment = (hull[i-1,0,:], hull[i,0,:])
 						segangle = angle
+		# returns tuple of 2 element np arrays in img coordinates. transform to xy with self.img2xy(points)
 		return segment
+
+
+	def img2xy(self,points):
+		# input point has origin in the top left, (x,y) order, increasing down and to the right
+		# output point has origin in the center, (x,y) order, increasing up and to the right
+		if points is None:
+			return None
+		output = []
+		if type(points) != list and type(points) != tuple:
+			points = [points]
+		for point in points:
+			point = np.array([point[0] - self.res[1]/2, self.res[0]*3/2 - point[1]])
+			output.append(point)
+		if type(points) == tuple:
+			output = tuple(output)
+		return output
+
+
+	def transform(self,points,planeN=[0,1,0],planeT=[0,0,0]):
+		if points is None:
+			return None
+		planeN = np.reshape(planeN,(3,))
+		planeT = np.reshape(planeT,(3,))
+		output = []
+		# import pdb; pdb.set_trace()
+		if type(points) != list and type(points) != tuple:
+			points = [points]
+		for point in points:
+			point = np.reshape(point,(2,))
+			point = np.concatenate((point * self.pix2dist, [self.camFocal]), axis=0)
+			point = self.camR @ point # rotate to the world frame
+			c = (-np.dot(self.camT,planeN) + np.dot(planeT,planeN)) / np.dot(point,planeN)
+			transformed = c * point + self.camT
+			output.append(transformed)
+		return output
 
 
 		
@@ -95,12 +152,22 @@ class RoadFinder:
 if __name__ == '__main__':
 	roadfinder = RoadFinder()
 	stream = Stream(mode='img',src='Files/Pictures')
+	resolution = (720,1280)
+	roadfinder.setCam(res=resolution)
 	for img in stream:
+		img = Stream.resize(img,resolution)
+		imgshow = np.copy(img)
+		starttime = time.time()
 		mask = roadfinder.filter(img)
-		hull = roadfinder.hull(mask, draw=img)
-		edge = roadfinder.edge(hull)
-		maskedimg = Stream.mask(mask,img,alpha=0.3)
-		maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
+		hull = roadfinder.hull(mask, draw=imgshow)
+		edge = roadfinder.segment(hull)
+		worldedge = roadfinder.transform(roadfinder.img2xy(edge))
+		print(worldedge)
+		dtime = time.time() - starttime
+		# print(dtime)
+		maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
+		if worldedge is not None:
+			maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
 		Stream.show(maskedimg,name="img",shape=(720,1280),pause=True)
 
 
