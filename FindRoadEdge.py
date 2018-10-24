@@ -1,4 +1,4 @@
-from imgstream import Stream
+from ImgStream import Stream
 import cv2
 import numpy as np
 from math import *
@@ -108,13 +108,13 @@ class RoadFinder:
 						best = quality
 						segment = (hull[i-1,0,:], hull[i,0,:])
 						segangle = angle
-		# returns tuple of 2 element np arrays in img coordinates. transform to xy with self.img2xy(points)
+		# returns tuple of 2 element np arrays in img coordinates. transform to xy with self.imgcenter(points)
 		return segment
 
 
-	def img2xy(self,points):
-		# input point has origin in the top left, (y,z) order, increasing down and to the right
-		# output point has origin in the center, (y,z) order, increasing up and to the right
+	def imgcenter(self,points):
+		# input point has origin in the top left
+		# output point has origin in the center
 		if points is None:
 			return None
 		output = []
@@ -134,7 +134,6 @@ class RoadFinder:
 		planeN = np.reshape(planeN,(3,))
 		planeT = np.reshape(planeT,(3,))
 		output = []
-		# import pdb; pdb.set_trace()
 		if type(points) != list and type(points) != tuple:
 			points = [points]
 		for point in points:
@@ -147,22 +146,35 @@ class RoadFinder:
 		return output
 
 
+	def find(self,img,show=False):
+		mask = roadfinder.filter(img)
+		hull = roadfinder.hull(mask, draw=(img if show else None))
+		edge = roadfinder.segment(hull)
+		worldedge = roadfinder.transform(roadfinder.imgcenter(edge))
+		if show:
+			maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
+			if worldedge is not None:
+				maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
+			Stream.show(maskedimg,name="img",shape=(720,1280),pause=False)
+		return worldedge
+
+
 		
 
 if __name__ == '__main__':
 	roadfinder = RoadFinder()
-	stream = Stream(mode='img',src='Files/Pictures')
+	imgstream = Stream(mode='img',src='Files/CarPictures')
 	resolution = (720,1280)
 	roadfinder.setCam(res=resolution)
-	roadfinder.setRT(heightoffset=0.1,pitchoffset=-15)
-	for img in stream:
+	roadfinder.setRT(heightoffset=0.1,pitchoffset=-12.6)
+	for img in imgstream:
 		img = Stream.resize(img,resolution)
 		imgshow = np.copy(img)
 		starttime = time.time()
 		mask = roadfinder.filter(img)
 		hull = roadfinder.hull(mask, draw=imgshow)
 		edge = roadfinder.segment(hull)
-		worldedge = roadfinder.transform(roadfinder.img2xy(edge))
+		worldedge = roadfinder.transform(roadfinder.imgcenter(edge))
 		print("worldedge", worldedge)
 		dtime = time.time() - starttime
 		print("time", dtime)

@@ -1,0 +1,36 @@
+from time import time
+
+class Filter:
+
+	def __init__(self):
+		self.lowmeas = 0
+		self.highmeas = 0
+		self.filterval = 0
+		self.val = 0
+		self.wc = 1
+
+	def predict(self,update=True):
+		alpha = 1 / (1 + self.wc * dt)
+		filterval = (alpha) * (self.filterval) + (1-alpha) * (self.lowmeas - self.highmeas)
+		if update:
+			self.filterval = filterval
+		self.val = filterval + self.highmeas
+		return self.val
+
+
+class Integrate:
+
+	def __init__(self):
+		self.val = 0
+		self.time = time()
+
+	def update(self,meas,dt=None,lowerbound=None,upperbound=None):
+		if dt is None:
+			dt = time() - self.time
+		self.time = time()
+		self.val += meas * dt
+		if lowerbound is not None:
+			self.val = max(self.val,lowerbound)
+		if upperbound is not None:
+			self.val = min(self.val,upperbound)
+		return self.val
