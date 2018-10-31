@@ -1,3 +1,4 @@
+from queue import PriorityQueue
 import math
 import numpy as np
 
@@ -9,11 +10,13 @@ class Map:
 		# Read in Edges
 		edgeFile = open("Files/Map/mapPennParkEdges.txt","r")
 		self.edges = {}
+		self.maxspeed = 0
 		for line in edgeFile:
 			data = line.split()
 			if data[0] not in self.edges:
 				self.edges[data[0]] = {}
 			self.edges[data[0]][data[1]] = np.array([float(data[2]),float(data[3])])
+			self.maxspeed = max(self.maxspeed,float(data[2]),float(data[3]))
 		edgeFile.close()
 
 		# Read in Nodes
@@ -109,6 +112,58 @@ class Map:
 				"Error": minerr, 
 				"Distance Along Road": bestroaddist,
 				"Fraction Along Road": bestroadfrac}
+
+
+	def time(self,node1,node2):
+
+		node1pos = self.deg2meters(node1)
+		node2pos = self.deg2meters(node2)
+		dist = (node1pos[0]-node2pos[0])**2 + (node1pos[1]-node2pos[1])**2
+		speed = self.speedLimit(node1,node2)
+		speed = speed if (speed != 0) else self.maxspeed
+		time = dist / speed
+		return time
+
+
+	def next(self,node):
+
+		nextnodes = []
+		if node in self.edges:
+			for nextnode, speed in self.edges[node].items():
+				if speed != 0:
+					nextnodes.append(nextnode)
+		return nextnodes
+
+
+	def pathplan(self,start,end):
+
+		q = PriorityQueue()
+		prev = {}
+		for node in self.next(start):
+			time = self.time(start,node)
+			heuristic = self.time(node,end)
+			q.put((time,node))
+			prev[node] = (start,time)
+
+		while not q.empty():
+			pathtime, curr = q.get()
+			if curr == end:
+				break
+			for node in self.next(curr):
+				time = self.time(curr,node) + pathtime
+				heuristic = self.time(node,end)
+				q.put((time+heuristic,node))
+				if node not in prev or prev[node][1] > time:
+					prev[node] = (curr,time)
+
+		node = end
+		path = [end]
+		while node != start:
+			node = prev[node]
+			path.append(node)
+		path = path.reverse()
+		return path
+
 
 
 
