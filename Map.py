@@ -34,7 +34,8 @@ class Map:
 
 
 	def speedLimit(self,start,end):
-
+		if start is None or end is None:
+			return 0
 		direction = (start < end)
 		if direction:
 			if (start in self.edges) and (end in self.edges[start]):
@@ -181,27 +182,9 @@ def showpts(m):
 	plt.show()
 
 
-def str_dict(dictionary,spaces=0):
-    string = ""
-    if type(dictionary) == dict:
-        for (key,value) in dictionary.items():
-            if key != 'photos':
-                if type(value) != dict and type(value) != list:
-                    string += " " * spaces*4 + " " + str(key) + " : " + str(value) + "\n"
-                else:
-                    string += " " * spaces*4 + " " + str(key) + " : \n"
-                    string += str_dict(value,spaces+1)
-    elif type(dictionary) == list:
-        for item in dictionary:
-            string += str_dict(item,spaces+1)
-    else:
-        string += " " * spaces*4 + " " + str(dictionary) + "\n"
-    return string
-
-
 if __name__ == '__main__':
 	m = Map()
 	a = m.predictPos(m.meters2deg(np.array([-30,-50])), degrees=True)
-	print(str_dict(a))
+	print(a)
 	# import code
 	# code.interact(local=locals())
