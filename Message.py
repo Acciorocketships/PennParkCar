@@ -22,14 +22,13 @@ address = 0x04
 #
 def getFloatData(oldFloats):
     try:
-        data_received = bus.read_i2c_block_data(address, 1, 28)
+        data_received = bus.read_i2c_block_data(address, 1, 24)
         newFloats = [bytes_2_float(data_received, 0)]
         newFloats.append(bytes_2_float(data_received, 1))
         newFloats.append(bytes_2_float(data_received, 2))
         newFloats.append(bytes_2_float(data_received, 3))
         newFloats.append(bytes_2_float(data_received, 4))
         newFloats.append(bytes_2_float(data_received, 5))
-        newFloats.append(bytes_2_float(data_received, 6))
     except:
         print("error reading float data")
         newFloats = oldFloats;
@@ -88,21 +87,19 @@ class Message:
         self.gyrox = 0
         self.gyroy = 0
         self.gyroz = 0
-        self.magz = 0
     def send(self):
         desHeading = bytearray(struct.pack("f", float(self.desHeading)))
         estHeading = bytearray(struct.pack("f", float(self.estHeading)))
         desSpeed = bytearray(struct.pack("f", float(self.desSpeed)))
         estSpeed = bytearray(struct.pack("f", float(self.estSpeed)))
         message =desHeading + estHeading + desSpeed + estSpeed
-        print( list(message))
+        #print( list(message))
         putByteList([self.manual] + list(message))
     def recieve(self):
-        recievedData = getFloatData([self.gpsLat, self.gpsLon, self.gpsVelocity, self.gyrox, self.gyroy, self.gyroz, self.magz])
+        recievedData = getFloatData([self.gpsLat, self.gpsLon, self.gpsVelocity, self.gyrox, self.gyroy, self.gyroz])
         self.gpsLat =  recievedData[0]
         self.gpsLon = recievedData[1]
         self.gpsVelocity = recievedData[2]
         self.gyrox = recievedData[3]
         self.gyroy = recievedData[4]
         self.gyroz = recievedData[5]
-        self.magz = recievedData[6]

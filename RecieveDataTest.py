@@ -7,4 +7,4 @@ message = Message()
 while True:
     time.sleep(0.1)
     message.recieve()
-    print(message.magz)
+    print(message.gyroz)

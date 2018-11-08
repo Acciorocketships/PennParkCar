@@ -30,19 +30,20 @@ message = Message(manual = True)
 ###
 while True:
     time.sleep(0.1)
-    print(str(message.desHeading))
-    print(str(message.desSpeed))
-    message.desHeading = manual.servoAngle
-    message.desSpeed = manual.velocity
+    if(manual.manual == 1):
+        print(str(message.desHeading))
+        print(str(message.desSpeed))
+        message.desHeading = manual.servoAngle
+        message.desSpeed = manual.velocity
+        message.send()
 
-    message.send()
-
-   #trigger input
-    if(manual.trigger == 1):
-        print("Triggered")
-        photoCounter += 1
-        camera.capture('TriggerTest' + str(photoCounter) +'.jpg')
-   
+        #trigger input
+        if(manual.trigger == 1):
+            print("Triggered")
+            photoCounter += 1
+            camera.capture('TriggerTest' + str(photoCounter) +'.jpg')
+    else:
+        print("not in Manual")
 
 
 

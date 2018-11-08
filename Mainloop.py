@@ -6,11 +6,14 @@ from Map import *
 from math import *
 from time import time, sleep
 import numpy as np
+from Message import Message
+
 
 class MainLoop:
 
 	def __init__(self):
 		self.map = Map()
+		self.message = Message()
 		self.roadfinder = RoadFinder()
 		self.imgstream = Stream(mode='img',src='Files/Pictures')
 		self.threads = {}
@@ -112,9 +115,16 @@ class MainLoop:
 
 
 	def receive(self):
-		pass
+		self.message.recieve()
+		self.inputs['psiIMUdot'] = self.message.gyroz
+		self.inputs['posGPS'] = (self.message.gpsLat, self.message.gpsLon)
 
 
 	def send(self):
-		pass
+                self.message.manual = False
+		self.message.desHeading = self.psid
+		self.message.desSpeed = self.veld
+		self.message.estHeading = self.localvars['psi']
+		self.message.estSpeed = self.localvars['vel']
+                self.message.send()
 
