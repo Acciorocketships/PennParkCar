@@ -147,10 +147,10 @@ class RoadFinder:
 
 
 	def find(self,img,show=False):
-		mask = roadfinder.filter(img)
-		hull = roadfinder.hull(mask, draw=(img if show else None))
-		edge = roadfinder.segment(hull)
-		worldedge = roadfinder.transform(roadfinder.imgcenter(edge))
+		mask = self.filter(img)
+		hull = self.hull(mask, draw=(img if show else None))
+		edge = self.segment(hull)
+		worldedge = self.transform(self.imgcenter(edge))
 		if show:
 			maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
 			if worldedge is not None:

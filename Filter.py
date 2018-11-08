@@ -22,7 +22,7 @@ class Filter:
 		return self.val
 
 
-class Integrate:
+class Integrator:
 
 	def __init__(self):
 		self.val = 0

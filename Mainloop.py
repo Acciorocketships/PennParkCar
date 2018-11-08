@@ -6,20 +6,21 @@ from Map import *
 from Planning import *
 from math import *
 from time import time, sleep
+import code
 import numpy as np
-from Message import Message
+# from Message import Message
 
 
 class MainLoop:
 
 	def __init__(self):
 		self.map = Map()
-		self.message = Message()
+		# self.message = Message()
 		self.roadfinder = RoadFinder()
 		self.planner = Planner()
-		self.imgstream = Stream(mode='img',src='Files/Pictures')
-		self.threads = {}
+		self.imgstream = Stream(mode='img',src='Files/CarPictures')
 		# Variables
+		self.destination = "A"
 		self.inputs = {'psiIMUdot': 0, 'posGPS': np.array([0,0])}
 		self.localvars = {'psiCAM': 0, 'psiIMU': 0, 'yposCAM': 0, 'vel': 0,
 						  'psi': 0, 'pos': np.array([0,0]), 'side': None}
@@ -27,24 +28,47 @@ class MainLoop:
 						   'psiGPSconfidence': 0, 'posGPSconfidence': 0,
 						   'psiRoad': 0, 'progress': 0, 'progressFrac': 0,
 						   'intersection': False, 'nextRoad': np.array([0,0]),
-						   'road', (None,None), 'roadStart': np.array([0,0]), 'roadEnd': np.array([0,0])}
+						   'road': (None,None), 'roadStart': np.array([0,0]), 'roadEnd': np.array([0,0])}
 		# Outputs
 		self.psid = 0
 		self.veld = 0
 		# Options
 		self.showimg = False
-		self.print = False
+		self.printlist = {}
 		self.manual = False
 
 
 	def run(self):
-		visionThread = Thread(target=self.findroads)
-		self.threads['vision'] = visionThread
+
+		visionThread = Thread(target=self.vision)
 		visionThread.start()
+
+		filterThread = Thread(target=self.filter)
+		filterThread.start()
+
+		gpsThread = Thread(target=self.gps)
+		gpsThread.start()
+
+		mapThread = Thread(target=self.mapplanner)
+		mapThread.start()
+
+		controlThread = Thread(target=self.control)
+		controlThread.start()
+
+		printThread = Thread(target=self.printloop)
+		printThread.start()
+
+		# sendThread = Thread(target=self.send)
+		# sendThread.start()
+
+		# receiveThread = Thread(target=self.receive)
+		# receiveThread.start()
+
+		code.interact(local=locals())
 
 
 	def vision(self):
-		for img in imgstream:
+		for img in self.imgstream:
 			# Process Image
 			edge = self.roadfinder.find(img,show=self.showimg) # edge = ((x1,y1),(x2,y2))
 			# Get Distance from edge and Psi relative to edge
@@ -64,6 +88,7 @@ class MainLoop:
 				self.localvars['yposCAM'] = 0
 				self.localvars['psiCAM'] = 0
 				self.localvars['side'] = None
+			sleep(0.01)
 
 
 	def filter(self):
@@ -82,18 +107,19 @@ class MainLoop:
 			# Psi
 			psi.lowmeas = self.localvars['psiCAM']
 			psi.highmeas = self.localvars['psiIMU']
-			psi.update(dt=dt)
+			psi.predict(dt=dt)
 			self.localvars['psi'] = psi.val
 			# Y Pos (From Road Edge)
 			ypos.lowmeas = self.localvars['yposCAM']
 			ypos.highmeas = self.localvars['vel'] * dt * sin(self.localvars['psi'])
-			ypos.update(dt=dt)
+			ypos.predict(dt=dt)
 			# X Pos (From Road Start)
 			xpos.lowmeas = np.linalg.norm(self.globalvars['posGPS'] - self.globalvars['roadStart'])
 			xpos.highmeas = self.localvars['vel'] * dt * cos(self.localvars['psi'])
-			xpos.update(dt=dt)
+			xpos.predict(dt=dt)
 			# Pos
 			self.localvars['pos'] = np.array([xpos.val, ypos.val])
+			sleep(0.001)
 
 
 	def gps(self):
@@ -104,7 +130,7 @@ class MainLoop:
 		shortEMAalpha = 0.5 * looptime
 
 		while True:
-			mapData = self.map.predictPos(self.map.deg2meters(self.inputs['posGPS']))
+			mapData = self.map.predictPos(self.inputs['posGPS'])
 			self.globalvars['roadStart'] = mapData['Road Start']
 			self.globalvars['roadEnd'] = mapData['Road End']
 			self.globalvars['posGPS'] = mapData['Prediction']
@@ -114,45 +140,82 @@ class MainLoop:
 			self.globalvars['psiGPS'] = atan2(vecGPS[1],vecGPS[0])
 			vecRoad = mapData['Road Start'] - mapData['Road End']
 			roadLength = np.linalg.norm(vecRoad)
-			vecRoad = vecroad / roadLength
+			vecRoad = vecRoad / roadLength
 			self.globalvars['psiGPSconfidence'] = tanh(0.1*np.dot(vecGPS,vecRoad))
 			self.globalvars['posGPSconfidence'] = exp(-0.1*mapData['Error'])
 			self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
 			self.globalvars['progress'] = mapData["Distance Along Road"]
 			self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
 			 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
+			sleep(0.2)
 
+
+	def mapplanner(self):
+		lastroad = self.globalvars['road']
+		lastdestination = self.destination
+		while True:
+			if self.globalvars['road'] != (None,None) and \
+			 ((self.globalvars['road'] != lastroad) or (lastdestination != self.destination)):
+				route = self.map.pathplan(self.globalvars['road'][0],self.destination)
+				if len(route) > 1 and route[1] == self.globalvars['road'][1]:
+					self.globalvars['roadStart'] = self.map.nodes[route[0]]
+					self.globalvars['roadEnd'] = self.map.nodes[route[1]]
+					if len(route) > 2:
+						self.globalvars['nextRoad'] = self.map.nodes[route[2]]
+				else:
+					self.globalvars['roadStart'] = self.map.nodes[self.globalvars['road'][1]]
+					self.globalvars['roadEnd'] = self.map.nodes[route[0]]
+					self.globalvars['road'] = (self.globalvars['road'][1],self.globalvars['road'][0])
+					if len(route) > 2:
+						self.globalvars['nextRoad'] = self.map.nodes[route[1]]
+			sleep(0.5)
+				# TODO: handle when len of route < 2
 
 
 	def control(self):
 		while True:
 			if not self.manual:
 				self.psid = self.planner.psid(self.localvars,self.globalvars)
-				self.veld = self.map.speedLimit(self.globalvars['Road'][0],self.globalvars['Road'][1])
+				self.veld = self.map.speedLimit(self.globalvars['road'][0],self.globalvars['road'][1])
+			sleep(0.001)
+
+
+	def printloop(self):
+		while True:
+			if len(self.printlist) != 0:
+				print(str_dict(self.printlist))
+			sleep(0.1)
 
 
 	def receive(self):
-		self.message.recieve()
-		self.inputs['psiIMUdot'] = self.message.gyroz
-		self.inputs['posGPS'] = (self.message.gpsLat, self.message.gpsLon)
+		while True:
+			self.message.recieve()
+			self.inputs['psiIMUdot'] = self.message.gyroz
+			self.inputs['posGPS'] = self.map.deg2meters(self.message.gpsLat, self.message.gpsLon)
+			sleep(0.0005)
 
 
 	def send(self):
-                self.message.manual = False
-		self.message.desHeading = self.psid
-		self.message.desSpeed = self.veld
-		self.message.estHeading = self.localvars['psi']
-		self.message.estSpeed = self.localvars['vel']
-                self.message.send()
+		while True:
+			self.message.manual = False
+			self.message.desHeading = self.psid
+			self.message.desSpeed = self.veld
+			self.message.estHeading = self.localvars['psi']
+			self.message.estSpeed = self.localvars['vel']
+			self.message.send()
+			sleep(0.0005)
+
+
+	def print(self,var):
+		if var in self.__dict__:
+			self.printlist[var] = self.__dict__[var]
 
 
 
 
 
 
-
-
-
+## Helper Functions ##
 
 def str_dict(dictionary,spaces=0):
     string = ""
@@ -169,4 +232,11 @@ def str_dict(dictionary,spaces=0):
     else:
         string += " " * spaces*4 + " " + str(dictionary) + "\n"
     return string
+
+
+## Run ##
+
+if __name__ == '__main__':
+	main = MainLoop()
+	main.run()
 

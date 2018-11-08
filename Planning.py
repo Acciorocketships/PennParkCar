@@ -22,7 +22,7 @@ class Planner:
 		u = invhermite(localvars['pos'],self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'])
 		posherm = hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u)
 		pdotherm = hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u,1)
-		err = np.lingalg.norm(hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u) - localvars['pos'])
+		err = np.linalg.norm(hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u) - localvars['pos'])
 		if err > errThres:
 			# Dynamically change uFuture based on oversteer or understeer
 			pdotdesired = pdotherm - self.spline['p0dot']
@@ -54,7 +54,7 @@ class Planner:
 
 	def nextPoint(self,localvars,globalvars):
 		if not globalvars['intersection']:
-			pWaypoint = np.array([localvars['pos'][0] + planningdist, 0])
+			pWaypoint = np.array([localvars['pos'][0] + self.planningDist, 0])
 			pDotWaypoint = self.pDotControl * np.array([1, 0])
 		else:
 			nextdir = globalvars['nextRoad'] - globalvars['roadEnd']
@@ -62,7 +62,7 @@ class Planner:
 			pWaypoint = globalvars['roadEnd'] + self.intersectionRadius * nextdir
 			currpsi = atan2(globalvars['roadEnd'][1],globalvars['roadEnd'][0])
 			rot = np.array([[cos(currpsi), -sin(currpsi)],[sin(currpsi), cos(currpsi)]])
-			pDotWaypoint = self.intersectionRadius * (rot.T * nextdir)
+			pDotWaypoint = self.intersectionRadius * (rot.T @ nextdir)
 		return ( pWaypoint, pDotWaypoint )
 
 
@@ -87,12 +87,12 @@ def hermite(p0,p1,p0dot,p1dot,u=0.1,n=0):
 	U = np.array([nPr(3,n) * (u ** max(0,3-n)),
 				  nPr(2,n) * (u ** max(0,2-n)),
 				  nPr(1,n) * (u ** max(0,1-n)),
-				  nPr(0,n) * (u ** 0)       ]).T
+				  nPr(0,n) * (u ** 0)       ],dtype=np.float64).T
 	A = np.array([[2. ,-2., 1., 1.], 
 				  [-3., 3.,-2.,-1.], 
 				  [0. , 0., 1., 0.], 
 				  [1. , 0., 0., 0.]])
-	P = np.array([p0,p1,p0dot,p1dot])
+	P = np.array([p0,p1,p0dot,p1dot],dtype=np.float64)
 	ans = U @ A @ P
 	return ans
 
