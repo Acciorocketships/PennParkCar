@@ -4,18 +4,26 @@ from ComputerVision import *
 from ImgStream import *
 from Map import *
 from Planning import *
+from ManualControl import *
 from math import *
 from time import time, sleep
 import code
 import numpy as np
-# from Message import Message
+try:
+	from Message import Message
+except:
+	print("Skipping Message Import")
 
 
 class MainLoop:
 
 	def __init__(self):
 		self.map = Map()
-		# self.message = Message()
+		try:
+			self.message = Message()
+		except:
+			pass
+		self.joystick = ManualControl()
 		self.roadfinder = RoadFinder()
 		self.planner = Planner()
 		self.imgstream = Stream(mode='img',src='Files/CarPictures')
@@ -58,11 +66,16 @@ class MainLoop:
 		printThread = Thread(target=self.printloop)
 		printThread.start()
 
-		# sendThread = Thread(target=self.send)
-		# sendThread.start()
+		try:
 
-		# receiveThread = Thread(target=self.receive)
-		# receiveThread.start()
+			sendThread = Thread(target=self.send)
+			sendThread.start()
+
+			receiveThread = Thread(target=self.receive)
+			receiveThread.start()
+
+		except:
+			pass
 
 		code.interact(local=locals())
 
@@ -174,9 +187,13 @@ class MainLoop:
 
 	def control(self):
 		while True:
+			self.manual = self.joystick.manual
 			if not self.manual:
 				self.psid = self.planner.psid(self.localvars,self.globalvars)
 				self.veld = self.map.speedLimit(self.globalvars['road'][0],self.globalvars['road'][1])
+			else:
+				self.psid = self.joystick.servoAngle
+				self.veld = self.joystick.velocity
 			sleep(0.001)
 
 
