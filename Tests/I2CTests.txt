@@ -1,0 +1,14 @@
+Running the I2C tests
+
+We have 2 I2C test in pyton to test the sending and receiving of Floats
+
+To run the tests make sure to have manual_test.ino upload to the arduino.
+
+Plug in the joystick to the pi. The buttons we use are 
+
+Start to toggle manual 
+joystick L - R for steering angle
+joystick down for speed 
+trigger button on the middle grip to take a picture
+
+you should now be able to run the send and receive tests and observe the functionality.
