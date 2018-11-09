@@ -27,6 +27,19 @@ class Map:
 			self.nodes[data[0]] = np.array([float(data[1]),float(data[2])])
 		nodeFile.close()
 
+		# Create Children Dict
+		self.children = {}
+		for node0 in self.edges.keys():
+			for node1 in self.edges[node0].keys():
+				if node0 not in self.children:
+					self.children[node0] = []
+				if node1 not in self.children:
+					self.children[node1] = []
+				if self.speedLimit(node0,node1) > 0:
+					self.children[node0].append(node1)
+				if self.speedLimit(node1,node0) > 0:
+					self.children[node1].append(node0)
+
 		firstnode = self.nodes["A"]
 		self.basepos = np.array([firstnode[0],firstnode[1]])
 		self.fy = 111133 - 560*math.cos(2*firstnode[0] * 3.1416/180)
@@ -117,8 +130,8 @@ class Map:
 
 	def time(self,node1,node2):
 
-		node1pos = self.deg2meters(node1)
-		node2pos = self.deg2meters(node2)
+		node1pos = self.deg2meters(self.nodes[node1])
+		node2pos = self.deg2meters(self.nodes[node2])
 		dist = (node1pos[0]-node2pos[0])**2 + (node1pos[1]-node2pos[1])**2
 		speed = self.speedLimit(node1,node2)
 		speed = speed if (speed != 0) else self.maxspeed
@@ -126,21 +139,12 @@ class Map:
 		return time
 
 
-	def next(self,node):
-
-		nextnodes = []
-		if node in self.edges:
-			for nextnode, speed in self.edges[node].items():
-				if speed != 0:
-					nextnodes.append(nextnode)
-		return nextnodes
-
 
 	def pathplan(self,start,end):
 
 		q = PriorityQueue()
 		prev = {}
-		for node in self.next(start):
+		for node in self.children[start]:
 			time = self.time(start,node)
 			heuristic = self.time(node,end)
 			q.put((time,node))
@@ -150,7 +154,7 @@ class Map:
 			pathtime, curr = q.get()
 			if curr == end:
 				break
-			for node in self.next(curr):
+			for node in self.children[curr]:
 				time = self.time(curr,node) + pathtime
 				heuristic = self.time(node,end)
 				q.put((time+heuristic,node))
@@ -160,17 +164,17 @@ class Map:
 		node = end
 		path = [end]
 		while node != start:
-			node = prev[node]
+			node = prev[node][0]
 			path.append(node)
-		path = path.reverse()
+		path.reverse()
 		return path
 
 
 
 
-def showpts(m):
-
+def showpts():
 	from matplotlib import pyplot as plt
+	m = Map()
 	plt.figure(0)
 	xm = []
 	ym = []
@@ -182,9 +186,16 @@ def showpts(m):
 	plt.show()
 
 
-if __name__ == '__main__':
+def testPredict():
 	m = Map()
 	a = m.predictPos(m.meters2deg(np.array([-30,-50])), degrees=True)
 	print(a)
-	# import code
-	# code.interact(local=locals())
+
+def testPathPlan():
+	m = Map()
+	path = m.pathplan("A","K")
+	print(path)
+
+if __name__ == '__main__':
+	testPathPlan()
+	

@@ -4,13 +4,13 @@ from ComputerVision import *
 from ImgStream import *
 from Map import *
 from Planning import *
-from ManualControl import *
 from math import *
 from time import time, sleep
 import code
 import numpy as np
 try:
 	from Message import Message
+	from ManualControl import *
 except:
 	print("Skipping Message Import")
 
@@ -18,13 +18,13 @@ except:
 class MainLoop:
 
 	def __init__(self):
-		self.map = Map()
 		try:
 			self.message = Message()
+			self.joystick = ManualControl()
 		except:
 			pass
-		self.joystick = ManualControl()
-		self.roadfinder = RoadFinder()
+		self.map = Map()
+		self.cv = Vision()
 		self.planner = Planner()
 		self.imgstream = Stream(mode='img',src='Files/CarPictures')
 		# Variables
@@ -41,49 +41,49 @@ class MainLoop:
 		self.psid = 0
 		self.veld = 0
 		# Options
-		self.showimg = False
 		self.printlist = {}
+		self.printfreq = 0.1
 		self.manual = False
+		self.threads = {'gps': True, 'vision': True, 'filter': True, 'map': True,
+						'control': True, 'send': False, 'receive': False, 'print': True}
 
 
 	def run(self):
 
-		visionThread = Thread(target=self.vision)
-		visionThread.start()
-
-		filterThread = Thread(target=self.filter)
-		filterThread.start()
-
-		gpsThread = Thread(target=self.gps)
-		gpsThread.start()
-
-		mapThread = Thread(target=self.mapplanner)
-		mapThread.start()
-
-		controlThread = Thread(target=self.control)
-		controlThread.start()
-
-		printThread = Thread(target=self.printloop)
-		printThread.start()
-
-		try:
-
+		if self.threads['vision']:
+			visionThread = Thread(target=self.vision)
+			visionThread.start()
+		if self.threads['filter']:
+			filterThread = Thread(target=self.filter)
+			filterThread.start()
+		if self.threads['gps']:
+			gpsThread = Thread(target=self.gps)
+			gpsThread.start()
+		if self.threads['map']:
+			mapThread = Thread(target=self.mapper)
+			mapThread.start()
+		if self.threads['control']:
+			controlThread = Thread(target=self.control)
+			controlThread.start()
+		if self.threads['print']:
+			printThread = Thread(target=self.printloop)
+			printThread.start()
+		if self.threads['send']:
 			sendThread = Thread(target=self.send)
 			sendThread.start()
-
+		if self.threads['receive']:
 			receiveThread = Thread(target=self.receive)
 			receiveThread.start()
-
-		except:
-			pass
 
 		code.interact(local=locals())
 
 
 	def vision(self):
 		for img in self.imgstream:
+			if not self.threads['vision']:
+				break
 			# Process Image
-			edge = self.roadfinder.find(img,show=self.showimg) # edge = ((x1,y1),(x2,y2))
+			edge = self.cv.find(img) # edge = ((x1,y1),(x2,y2))
 			# Get Distance from edge and Psi relative to edge
 			if edge is not None:
 				dist = (edge[1][0]*edge[0][1] + edge[1][1]*edge[0][0]) / ( (edge[1][1]-edge[0][1])**2 + (edge[1][0]-edge[0][0])**2 )
@@ -111,7 +111,7 @@ class MainLoop:
 		xpos = Filter(wc=1)
 		ypos = Filter(wc=1)
 
-		while True:
+		while self.threads['filter']:
 			dt = time() - lasttime
 			lasttime = time()
 			# Psi Integrator
@@ -142,7 +142,7 @@ class MainLoop:
 		longEMAalpha = 0.05 * looptime
 		shortEMAalpha = 0.5 * looptime
 
-		while True:
+		while self.threads['gps']:
 			mapData = self.map.predictPos(self.inputs['posGPS'])
 			self.globalvars['roadStart'] = mapData['Road Start']
 			self.globalvars['roadEnd'] = mapData['Road End']
@@ -163,10 +163,11 @@ class MainLoop:
 			sleep(0.2)
 
 
-	def mapplanner(self):
+	def mapper(self):
 		lastroad = self.globalvars['road']
 		lastdestination = self.destination
-		while True:
+
+		while self.threads['map']:
 			if self.globalvars['road'] != (None,None) and \
 			 ((self.globalvars['road'] != lastroad) or (lastdestination != self.destination)):
 				route = self.map.pathplan(self.globalvars['road'][0],self.destination)
@@ -186,8 +187,12 @@ class MainLoop:
 
 
 	def control(self):
-		while True:
-			self.manual = self.joystick.manual
+		while self.threads['control']:
+			try:
+				self.joystick.update()
+				self.manual = self.joystick.manual
+			except:
+				pass
 			if not self.manual:
 				self.psid = self.planner.psid(self.localvars,self.globalvars)
 				self.veld = self.map.speedLimit(self.globalvars['road'][0],self.globalvars['road'][1])
@@ -198,14 +203,20 @@ class MainLoop:
 
 
 	def printloop(self):
-		while True:
+		while self.threads['print']:
+			# Print everything in print list
 			if len(self.printlist) != 0:
 				print(str_dict(self.printlist))
-			sleep(0.1)
+			# sleep for printfreq seconds
+			try:
+				sleep(self.printfreq)
+			except:
+				while self.printfreq < 0:
+					sleep(1)
 
 
 	def receive(self):
-		while True:
+		while self.threads['send']:
 			self.message.recieve()
 			self.inputs['psiIMUdot'] = self.message.gyroz
 			self.inputs['posGPS'] = self.map.deg2meters(self.message.gpsLat, self.message.gpsLon)
@@ -213,7 +224,7 @@ class MainLoop:
 
 
 	def send(self):
-		while True:
+		while self.threads['receive']:
 			self.message.manual = False
 			self.message.desHeading = self.psid
 			self.message.desSpeed = self.veld
@@ -224,12 +235,33 @@ class MainLoop:
 
 
 	def print(self,var):
-		if var in self.__dict__:
-			self.printlist[var] = self.__dict__[var]
+		varname = None
+		for name, val in self.__dict__.items():
+			if var == val and name != 'var':
+				varname = name
+				break
+		if varname is None:
+			return
+		self.printlist[varname] = var
 
 
+	def start(self,thread):
+		thread = Thread(target=getattr(self,thread))
+		thread.start()
+		self.threads[thread] = True
 
 
+	def stop(self,thread):
+		self.threads[thread] = False
+
+
+	def showimg(self):
+		try:
+			self.cv.markupimg = True
+			while True:
+				Stream.show(self.cv.img,name="Camera",shape=(720,1280),pause=False)
+		except:
+			self.cv.markupimg = False
 
 
 ## Helper Functions ##

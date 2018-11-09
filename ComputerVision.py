@@ -4,11 +4,13 @@ import numpy as np
 from math import *
 import time
 
-class RoadFinder:
+class Vision:
 
 	def __init__(self):
 		self.setRT()
 		self.setCam()
+		self.img = None
+		self.markupimg = False
 
 
 	def setCam(self,focal=3.5E-3,fov=65,res=(720,1280)):
@@ -146,23 +148,24 @@ class RoadFinder:
 		return output
 
 
-	def find(self,img,show=False):
+	def find(self,img):
 		mask = self.filter(img)
 		hull = self.hull(mask, draw=(img if show else None))
 		edge = self.segment(hull)
 		worldedge = self.transform(self.imgcenter(edge))
-		if show:
+		if self.markupimg:
+			imgshow = np.copy(img)
 			maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
 			if worldedge is not None:
 				maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
-			Stream.show(maskedimg,name="img",shape=(720,1280),pause=False)
+			self.img = maskedimg
 		return worldedge
 
 
 		
 
 if __name__ == '__main__':
-	roadfinder = RoadFinder()
+	roadfinder = Vision()
 	imgstream = Stream(mode='img',src='Files/CarPictures')
 	resolution = (720,1280)
 	roadfinder.setCam(res=resolution)
@@ -183,5 +186,6 @@ if __name__ == '__main__':
 		if worldedge is not None:
 			maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
 		Stream.show(maskedimg,name="img",shape=(720,1280),pause=True)
+
 
 

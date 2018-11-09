@@ -23,16 +23,16 @@ class Planner:
 		posherm = hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u)
 		pdotherm = hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u,1)
 		err = np.linalg.norm(hermite(self.spline['p0'],self.spline['p1'],self.spline['p0dot'],self.spline['p1dot'],u) - localvars['pos'])
-		if err > errThres:
-			# Dynamically change uFuture based on oversteer or understeer
-			pdotdesired = pdotherm - self.spline['p0dot']
-			angledesired = atan2(pdotdesired[1],pdotdesired[0])
-			pdotactual = pdotcurr - self.spline['p0dot']
-			angledactual = atan2(pdotactual[1],pdotactual[0])
-			if angledesired / angledactual > 1:
-				self.uFuture /= 1.1
-			else:
-				self.uFuture *= 1.1
+		# if err > errThres:
+		# 	# Dynamically change uFuture based on oversteer or understeer
+		# 	pdotdesired = pdotherm - self.spline['p0dot']
+		# 	angledesired = atan2(pdotdesired[1],pdotdesired[0])
+		# 	pdotactual = pdotcurr - self.spline['p0dot']
+		# 	angledactual = atan2(pdotactual[1],pdotactual[0])
+		# 	if angledesired / angledactual > 1:
+		# 		self.uFuture /= 1.1
+		# 	else:
+		# 		self.uFuture *= 1.1
 		if err > errThres or u > uReset:
 			# Reset Hermite Spline
 			pnext, pdotnext = self.nextPoint(localvars,globalvars)
