@@ -46,7 +46,7 @@ class MainLoop:
 		self.printfreq = 0.1
 		self.manual = False
 		self.threads = {'gps': True, 'vision': True, 'filter': True, 'map': True,
-						'control': True, 'send': False, 'receive': False, 'print': True}
+						'control': True, 'send': True, 'receive': True, 'print': True}
 
 
 	def run(self):
