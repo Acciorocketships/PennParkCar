@@ -2,7 +2,7 @@ from ImgStream import Stream
 import cv2
 import numpy as np
 from math import *
-import time
+from time import time
 
 class Vision:
 
@@ -67,7 +67,7 @@ class Vision:
 	def hull(self,mask,draw=None):
 		# Get contours
 		mask.dtype = np.uint8
-		im2, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		im2, contours, other = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 		# Get largest contour
 		maxarea = 0
 		maxcontour = contours[0]
@@ -173,13 +173,13 @@ if __name__ == '__main__':
 	for img in imgstream:
 		img = Stream.resize(img,resolution)
 		imgshow = np.copy(img)
-		starttime = time.time()
+		starttime = time()
 		mask = roadfinder.filter(img)
 		hull = roadfinder.hull(mask, draw=imgshow)
 		edge = roadfinder.segment(hull)
 		worldedge = roadfinder.transform(roadfinder.imgcenter(edge))
 		print("worldedge", worldedge)
-		dtime = time.time() - starttime
+		dtime = time() - starttime
 		print("time", dtime)
 		# import pdb; pdb.set_trace()
 		maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
