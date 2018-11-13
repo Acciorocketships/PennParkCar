@@ -220,7 +220,7 @@ class MainLoop:
 		while self.threads['send']:
 			self.message.recieve()
 			self.inputs['psiIMUdot'] = self.message.gyroz
-			self.inputs['posGPS'] = self.map.deg2meters(self.message.gpsLat, self.message.gpsLon)
+			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
 			sleep(0.0005)
 
 
