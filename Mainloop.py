@@ -5,7 +5,8 @@ from ImgStream import *
 from Map import *
 from Planning import *
 from math import *
-from time import time, sleep
+from time import sleep
+from time import time as Time
 import code
 import numpy as np
 try:
@@ -105,15 +106,15 @@ class MainLoop:
 
 
 	def filter(self):
-		lasttime = time()
+		lasttime = Time()
 		psiIMU = Integrator()
 		psi = Filter(wc=1)
 		xpos = Filter(wc=1)
 		ypos = Filter(wc=1)
 
 		while self.threads['filter']:
-			dt = time() - lasttime
-			lasttime = time()
+			dt = Time() - lasttime
+			lasttime = Time()
 			# Psi Integrator
 			psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
 			self.localvars['psiIMU'] = psiIMU.val

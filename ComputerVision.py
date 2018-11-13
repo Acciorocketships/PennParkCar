@@ -67,7 +67,7 @@ class Vision:
 	def hull(self,mask,draw=None):
 		# Get contours
 		mask.dtype = np.uint8
-		im2, contours, other = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # was im2, contours, _
 		# Get largest contour
 		maxarea = 0
 		maxcontour = contours[0]
