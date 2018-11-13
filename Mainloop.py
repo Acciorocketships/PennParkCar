@@ -145,22 +145,23 @@ class MainLoop:
 
 		while self.threads['gps']:
 			mapData = self.map.predictPos(self.inputs['posGPS'])
-			self.globalvars['roadStart'] = mapData['Road Start']
-			self.globalvars['roadEnd'] = mapData['Road End']
-			self.globalvars['posGPS'] = mapData['Prediction']
-			gpsEMAlong = longEMAalpha * self.globalvars['posGPS'] + (1-longEMAalpha) * gpsEMAlong
-			gpsEMAshort = shortEMAalpha * self.globalvars['posGPS'] + (1-shortEMAalpha) * gpsEMAshort
-			vecGPS = gpsEMAshort - gpsEMAlong
-			self.globalvars['psiGPS'] = atan2(vecGPS[1],vecGPS[0])
-			vecRoad = mapData['Road Start'] - mapData['Road End']
-			roadLength = np.linalg.norm(vecRoad)
-			vecRoad = vecRoad / roadLength
-			self.globalvars['psiGPSconfidence'] = tanh(0.1*np.dot(vecGPS,vecRoad))
-			self.globalvars['posGPSconfidence'] = exp(-0.1*mapData['Error'])
-			self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
-			self.globalvars['progress'] = mapData["Distance Along Road"]
-			self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
-			 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
+			if mapData['Prediction'] is not None:
+				self.globalvars['roadStart'] = mapData['Road Start']
+				self.globalvars['roadEnd'] = mapData['Road End']
+				self.globalvars['posGPS'] = mapData['Prediction']
+				gpsEMAlong = longEMAalpha * self.globalvars['posGPS'] + (1-longEMAalpha) * gpsEMAlong
+				gpsEMAshort = shortEMAalpha * self.globalvars['posGPS'] + (1-shortEMAalpha) * gpsEMAshort
+				vecGPS = gpsEMAshort - gpsEMAlong
+				self.globalvars['psiGPS'] = atan2(vecGPS[1],vecGPS[0])
+				vecRoad = mapData['Road Start'] - mapData['Road End']
+				roadLength = np.linalg.norm(vecRoad)
+				vecRoad = vecRoad / roadLength
+				self.globalvars['psiGPSconfidence'] = tanh(0.1*np.dot(vecGPS,vecRoad))
+				self.globalvars['posGPSconfidence'] = exp(-0.1*mapData['Error'])
+				self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
+				self.globalvars['progress'] = mapData["Distance Along Road"]
+				self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
+				 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
 			sleep(0.2)
 
 
