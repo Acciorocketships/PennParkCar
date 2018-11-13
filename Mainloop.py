@@ -234,7 +234,7 @@ class MainLoop:
 			sleep(0.0005)
 
 
-	def print(self,var):
+	def printvar(self,var):
 		varname = None
 		for name, val in self.__dict__.items():
 			if var == val and name != 'var':

@@ -27,7 +27,7 @@ class Vision:
 		yaw = np.array([[cos(yawoffset), -sin(yawoffset), 0], [sin(yawoffset), cos(yawoffset), 0], [0, 0, 1]])
 		pitch = np.array([[cos(pitchoffset), 0, sin(pitchoffset)], [0, 1, 0], [-sin(pitchoffset), 0, cos(pitchoffset)]])
 		roll = np.array([[1, 0, 0], [0, cos(rolloffset), -sin(rolloffset)], [0, sin(rolloffset), cos(rolloffset)]])
-		self.camR = yaw @ pitch @ roll
+		self.camR = yaw.dot(pitch).dot(roll)
 
 
 	def filterColor(self, img, ranges=(255,25,255)):
@@ -141,7 +141,7 @@ class Vision:
 		for point in points:
 			point = np.reshape(point,(2,))
 			point = np.concatenate(([self.camFocal], point * self.pix2dist), axis=0)
-			point = self.camR @ point # rotate to the world frame
+			point = np.matmul(self.camR,point) # rotate to the world frame
 			c = (-np.dot(self.camT,planeN) + np.dot(planeT,planeN)) / np.dot(point,planeN)
 			transformed = c * point + self.camT
 			output.append(transformed)
@@ -150,7 +150,7 @@ class Vision:
 
 	def find(self,img):
 		mask = self.filter(img)
-		hull = self.hull(mask, draw=(img if show else None))
+		hull = self.hull(mask, draw=(img if self.markupimg else None))
 		edge = self.segment(hull)
 		worldedge = self.transform(self.imgcenter(edge))
 		if self.markupimg:

@@ -1,4 +1,7 @@
-from queue import PriorityQueue
+try:
+	from queue import PriorityQueue
+except:
+	from Queue import PriorityQueue
 import math
 import numpy as np
 

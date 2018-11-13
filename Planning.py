@@ -62,7 +62,7 @@ class Planner:
 			pWaypoint = globalvars['roadEnd'] + self.intersectionRadius * nextdir
 			currpsi = atan2(globalvars['roadEnd'][1],globalvars['roadEnd'][0])
 			rot = np.array([[cos(currpsi), -sin(currpsi)],[sin(currpsi), cos(currpsi)]])
-			pDotWaypoint = self.intersectionRadius * (rot.T @ nextdir)
+			pDotWaypoint = self.intersectionRadius * np.matmul(rot.T,nextdir)
 		return ( pWaypoint, pDotWaypoint )
 
 
@@ -93,7 +93,7 @@ def hermite(p0,p1,p0dot,p1dot,u=0.1,n=0):
 				  [0. , 0., 1., 0.], 
 				  [1. , 0., 0., 0.]])
 	P = np.array([p0,p1,p0dot,p1dot],dtype=np.float64)
-	ans = U @ A @ P
+	ans = U.dot(A).dot(P)
 	return ans
 
 
@@ -113,9 +113,9 @@ def invhermite(pos,p0,p1,p0dot,p1dot):
 					  [3.,0.,0.,0.],
 					  [0.,2.,0.,0.],
 					  [0.,0.,1.,0.]]).T
-	mat1 = A @ P
+	mat1 = np.matmul(A, P)
 	mat1[3,:] -= pos
-	mat2 = deriv @ A @ P
+	mat2 = deriv.dot(A).dot(P)
 
 	# Dot product
 	polys = []
