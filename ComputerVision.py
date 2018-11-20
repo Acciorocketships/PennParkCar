@@ -156,6 +156,7 @@ class Vision:
 		hull = self.hull(mask, draw=(img if self.markupimg else None))
 		edge = self.segment(hull)
 		worldedge = self.transform(self.imgcenter(edge))
+		self.img = img
 		if self.markupimg:
 			imgshow = np.copy(img)
 			maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
