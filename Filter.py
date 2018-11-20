@@ -32,7 +32,7 @@ class Integrator:
 		self.offset = 0
 		self.numcalib = 0
 
-	def calibrate(meas):
+	def calibrate(self,meas):
 		self.offset = (self.offset * self.numcalib + meas) / (self.numcalib + 1)
 		self.numcalib += 1
 
