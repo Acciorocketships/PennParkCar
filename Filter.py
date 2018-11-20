@@ -63,6 +63,8 @@ class Integrator:
 			self.val = max(self.val,lowerbound)
 		if upperbound is not None:
 			self.val = min(self.val,upperbound)
+
+		print("offset:", offset, "meas:", meas, "val:", self.val)
 		return self.val
 
 

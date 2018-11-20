@@ -117,6 +117,8 @@ class MainLoop:
 				psiIMU.calibrate(self.inputs['psiIMUdot'])
 				psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
 				self.localvars['psiIMU'] = psiIMU.val
+			else:
+				print("psiIMUdot is NaN")
 			# Psi
 			psi.lowmeas = self.localvars['psiCAM']
 			psi.highmeas = self.localvars['psiIMU']
