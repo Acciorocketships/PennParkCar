@@ -221,7 +221,6 @@ class MainLoop:
 	def communication(self):
 		while self.threads['communication']:
 			self.message.recieve()
-			print(self.message.gyroz)
 			self.inputs['psiIMUdot'] = self.message.gyroz
 			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
 			sleep(0.05)
@@ -235,13 +234,13 @@ class MainLoop:
 
 
 	def printvar(self,var):
-		varname = None
-		for name, val in self.__dict__.items():
-			if var == val and name != 'var':
-				varname = name
-				break
-		if varname is None:
-			varname = 'var ' + str(len(self.printlist)+1)
+		# varname = None
+		# for name, val in self.__dict__.items():
+		# 	if var == val and name != 'var':
+		# 		varname = name
+		# 		break
+		# if varname is None:
+		varname = 'var ' + str(len(self.printlist)+1)
 		self.printlist[varname] = var
 
 
