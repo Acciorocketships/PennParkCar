@@ -6,6 +6,10 @@ except:
 	pass
 import cv2 
 import numpy as np 
+try:
+  import picamera
+except:
+  pass
 
 
 class Stream: 
@@ -38,7 +42,6 @@ class Stream:
       elif self.mode == 'cam': 
         self.stream = cv2.VideoCapture(0) 
       elif self.mode == 'pi':
-        import picamera
         self.stream = picamera.PiCamera()
  
  
@@ -111,7 +114,7 @@ class Stream:
 
     def pi(self):
       try:
-        image = self.stream.array.PiRGBArray(self.stream)
+        image = picamera.array.PiRGBArray(self.stream)
         self.stream.capture(image, 'rgb')
         return np.array(image)
       except Exception as error:
