@@ -27,7 +27,7 @@ class MainLoop:
 		self.map = Map()
 		self.cv = Vision()
 		self.planner = Planner()
-		self.imgstream = Stream(mode='img',src='Files/CarPictures')
+		self.imgstream = Stream(mode='img',src='pi')
 		# Variables
 		self.destination = "A"
 		self.inputs = {'psiIMUdot': 0, 'posGPS': np.array([0,0])}
