@@ -114,6 +114,7 @@ class MainLoop:
 			lasttime = Time()
 			# Psi Integrator
 			if not isnan(self.inputs['psiIMUdot']):
+				psiIMU.calibrate(self.inputs['psiIMUdot'])
 				psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
 				self.localvars['psiIMU'] = psiIMU.val
 			# Psi

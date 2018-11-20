@@ -29,6 +29,12 @@ class Integrator:
 		self.val = 0
 		self.cache = [(None,None),(None,None)] # last 2 (val,dt). times: [t-1, t-2]
 		self.time = Time()
+		self.offset = 0
+		self.numcalib = 0
+
+	def calibrate(meas):
+		self.offset = (self.offset * self.numcalib + meas) / (self.numcalib + 1)
+		self.numcalib += 1
 
 	def update(self,meas,dt=None,lowerbound=None,upperbound=None):
 		
@@ -36,6 +42,9 @@ class Integrator:
 		if dt is None:
 			dt = Time() - self.time
 		self.time = Time()
+
+		# Undo Offset
+		meas = meas - self.offset
 		
 		# Integrate
 		if self.cache[0][0] is None and self.cache[1][0] is None:
