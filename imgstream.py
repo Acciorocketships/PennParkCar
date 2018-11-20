@@ -114,7 +114,8 @@ class Stream:
         image = picamera.array.PiRGBArray(self.stream)
         self.stream.capture(image, 'rgb')
         return np.array(image)
-      except:
+      except error:
+        print(error)
         return None
  
  
