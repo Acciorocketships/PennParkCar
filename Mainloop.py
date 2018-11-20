@@ -80,7 +80,7 @@ class MainLoop:
 		for img in self.imgstream:
 			if not self.threads['vision']:
 				break
-			Stream.show(img,name="PiCam",shape=(720,1280),pause=False)
+			Stream.show(img,name="PiCam",pause=False)
 			# Process Image
 			edge = self.cv.find(img) # edge = ((x1,y1),(x2,y2))
 			# Get Distance from edge and Psi relative to edge
