@@ -231,7 +231,7 @@ void receiveDataI2C(int nPoints) {
             float estHeading = read_float();
             float desSpeed = read_float();
             float estSpeed = read_float();
-            velocity =  0.9 * deSpeed;
+            velocity =  0.9 * desSpeed;
             steeringAngle = 0.5 * rectifyAngle(desHeading - estHeading);
           }
           else if(piData[0] = false){

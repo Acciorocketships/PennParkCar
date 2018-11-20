@@ -59,7 +59,8 @@ def putByteList(byteList):
     try:
         bus.write_i2c_block_data(address, 255, byteList)
     except:
-        print("error writing commands")
+        pass
+        # print("error writing commands")
     return None
 
 #

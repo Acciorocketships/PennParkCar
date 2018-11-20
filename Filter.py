@@ -55,3 +55,8 @@ class Integrator:
 		if upperbound is not None:
 			self.val = min(self.val,upperbound)
 		return self.val
+
+
+if __name__ == '__main__':
+	f = Integrator()
+	import code; code.interact(local=locals())
