@@ -114,7 +114,7 @@ class Stream:
         image = picamera.array.PiRGBArray(self.stream)
         self.stream.capture(image, 'rgb')
         return np.array(image)
-      except error:
+      except Exception as error:
         print(error)
         return None
  
@@ -131,7 +131,7 @@ class Stream:
         image = self.cam() 
       elif self.mode == 'pi':
         image = self.pi()
-      if image.dtype is np.dtype('object'): 
+      if image is None or image.dtype is np.dtype('object'): 
         return None 
       return image 
  
