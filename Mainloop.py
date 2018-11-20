@@ -70,7 +70,7 @@ class MainLoop:
 			printThread = Thread(target=self.printloop)
 			printThread.start()
 		if self.threads['communication']:
-			message Thread = Thread(target=self.communication)
+			messageThread = Thread(target=self.communication)
 			messageThread.start()
 
 		code.interact(local=locals())
