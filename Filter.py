@@ -64,7 +64,7 @@ class Integrator:
 		if upperbound is not None:
 			self.val = min(self.val,upperbound)
 
-		print("offset:", offset, "meas:", meas, "val:", self.val)
+		print("offset:", self.offset, "meas:", meas, "val:", self.val)
 		return self.val
 
 
