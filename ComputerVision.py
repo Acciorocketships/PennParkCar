@@ -1,4 +1,4 @@
-from ImgStream import Stream
+from imgstream import Stream
 import cv2
 import numpy as np
 from math import *
