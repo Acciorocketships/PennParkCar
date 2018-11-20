@@ -111,7 +111,7 @@ class Stream:
 
     def pi(self):
       try:
-        image = picamera.array.PiRGBArray(self.stream)
+        image = self.stream.array.PiRGBArray(self.stream)
         self.stream.capture(image, 'rgb')
         return np.array(image)
       except Exception as error:
