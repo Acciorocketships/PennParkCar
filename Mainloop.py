@@ -113,10 +113,9 @@ class MainLoop:
 			dt = Time() - lasttime
 			lasttime = Time()
 			# Psi Integrator
-			print('psiIMUdot', self.inputs['psiIMUdot'])
-			psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
-			self.localvars['psiIMU'] = psiIMU.val
-			print('psiIMU', self.localvars['psiIMU'])
+			if not isnan(self.inputs['psiIMUdot']):
+				psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
+				self.localvars['psiIMU'] = psiIMU.val
 			# Psi
 			psi.lowmeas = self.localvars['psiCAM']
 			psi.highmeas = self.localvars['psiIMU']
