@@ -145,23 +145,22 @@ class MainLoop:
 
 		while self.threads['gps']:
 			mapData = self.map.predictPos(self.inputs['posGPS'])
-			if mapData['Prediction'] is not None:
-				self.globalvars['roadStart'] = mapData['Road Start']
-				self.globalvars['roadEnd'] = mapData['Road End']
-				self.globalvars['posGPS'] = mapData['Prediction']
-				gpsEMAlong = longEMAalpha * self.globalvars['posGPS'] + (1-longEMAalpha) * gpsEMAlong
-				gpsEMAshort = shortEMAalpha * self.globalvars['posGPS'] + (1-shortEMAalpha) * gpsEMAshort
-				vecGPS = gpsEMAshort - gpsEMAlong
-				self.globalvars['psiGPS'] = atan2(vecGPS[1],vecGPS[0])
-				vecRoad = mapData['Road Start'] - mapData['Road End']
-				roadLength = np.linalg.norm(vecRoad)
-				vecRoad = vecRoad / roadLength
-				self.globalvars['psiGPSconfidence'] = tanh(0.1*np.dot(vecGPS,vecRoad))
-				self.globalvars['posGPSconfidence'] = exp(-0.1*mapData['Error'])
-				self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
-				self.globalvars['progress'] = mapData["Distance Along Road"]
-				self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
-				 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
+			self.globalvars['roadStart'] = mapData['Road Start']
+			self.globalvars['roadEnd'] = mapData['Road End']
+			self.globalvars['posGPS'] = mapData['Prediction']
+			gpsEMAlong = longEMAalpha * self.globalvars['posGPS'] + (1-longEMAalpha) * gpsEMAlong
+			gpsEMAshort = shortEMAalpha * self.globalvars['posGPS'] + (1-shortEMAalpha) * gpsEMAshort
+			vecGPS = gpsEMAshort - gpsEMAlong
+			self.globalvars['psiGPS'] = atan2(vecGPS[1],vecGPS[0])
+			vecRoad = mapData['Road Start'] - mapData['Road End']
+			roadLength = np.linalg.norm(vecRoad)
+			vecRoad = vecRoad / roadLength
+			self.globalvars['psiGPSconfidence'] = tanh(0.1*np.dot(vecGPS,vecRoad))
+			self.globalvars['posGPSconfidence'] = exp(-0.1*mapData['Error'])
+			self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
+			self.globalvars['progress'] = mapData["Distance Along Road"]
+			self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
+			 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
 			sleep(0.2)
 
 
@@ -193,6 +192,7 @@ class MainLoop:
 			try:
 				self.joystick.update()
 				self.manual = self.joystick.manual
+				#print(self.manual)
 			except:
 				pass
 			if not self.manual:
@@ -218,22 +218,22 @@ class MainLoop:
 
 
 	def receive(self):
-		while self.threads['send']:
+		while self.threads['receive']:
 			self.message.recieve()
 			self.inputs['psiIMUdot'] = self.message.gyroz
-			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
-			sleep(0.0005)
-
-
-	def send(self):
-		while self.threads['receive']:
-			self.message.manual = False
+			self.inputs['posGPS'] = self.map.deg2meters(self.message.gpsLat, self.message.gpsLon)
+			sleep(0.05)
+			self.message.manual = self.manual
 			self.message.desHeading = self.psid
 			self.message.desSpeed = self.veld
 			self.message.estHeading = self.localvars['psi']
 			self.message.estSpeed = self.localvars['vel']
 			self.message.send()
-			sleep(0.0005)
+			sleep(0.05)			
+
+
+	def send(self):
+                pass
 
 
 	def printvar(self,var):
