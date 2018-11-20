@@ -8,6 +8,7 @@ import cv2
 import numpy as np 
 try:
   import picamera
+  import picamera.array
 except:
   pass
 
