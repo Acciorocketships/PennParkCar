@@ -30,7 +30,7 @@ def getFloatData(oldFloats):
         newFloats.append(bytes_2_float(data_received, 4))
         newFloats.append(bytes_2_float(data_received, 5))
     except:
-        print("error reading float data")
+        # print("error reading float data")
         newFloats = oldFloats;
 
     return newFloats
@@ -46,7 +46,7 @@ def getByteData(oldBytes):
         newBytes.append(data_received[2])
         newBytes.append(data_received[3])
     except:
-        print("error reading byte data")
+        # print("error reading byte data")
         newBytes = oldBytes;
 
     return newBytes

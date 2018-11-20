@@ -238,8 +238,13 @@ class MainLoop:
 			if var == val and name != 'var':
 				varname = name
 				break
+			elif type(val)==dict:
+				for dname, dval in val.items():
+					if var == dval:
+						varname = dname
+						break
 		if varname is None:
-			return
+			varname = 'var ' + str(len(self.printlist)+1)
 		self.printlist[varname] = var
 
 
