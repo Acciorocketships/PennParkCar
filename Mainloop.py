@@ -220,6 +220,7 @@ class MainLoop:
 	def communication(self):
 		while self.threads['communication']:
 			self.message.recieve()
+			print(self.message.gyroz)
 			self.inputs['psiIMUdot'] = self.message.gyroz
 			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
 			sleep(0.05)
