@@ -1,4 +1,5 @@
-from time import time
+from time import time as Time
+from scipy.integrate import simps
 
 class Filter:
 
@@ -8,12 +9,12 @@ class Filter:
 		self.filterval = 0
 		self.val = 0
 		self.wc = wc
-		self.time = time()
+		self.time = Time()
 
 	def predict(self,dt=None,update=True):
 		if dt is None:
-			dt = time() - self.time
-		self.time = time()
+			dt = Time() - self.time
+		self.time = Time()
 		alpha = 1 / (1 + self.wc * dt)
 		filterval = (alpha) * (self.filterval) + (1-alpha) * (self.lowmeas - self.highmeas)
 		if update:
@@ -26,13 +27,29 @@ class Integrator:
 
 	def __init__(self):
 		self.val = 0
-		self.time = time()
+		self.cache = [(None,None),(None,None)] # last 2 (val,dt). times: [t-1, t-2]
+		self.time = Time()
 
 	def update(self,meas,dt=None,lowerbound=None,upperbound=None):
+		
+		# Get Time
 		if dt is None:
-			dt = time() - self.time
-		self.time = time()
-		self.val += meas * dt
+			dt = Time() - self.time
+		self.time = Time()
+		
+		# Integrate
+		if self.cache[0][0] is None and self.cache[1][0] is None:
+			self.val += meas * dt
+		elif self.cache[1][0] is None:
+			self.val += simps([self.cache[0][0],        meas     ],
+							  [       0        , self.cache[0][1]])
+		else:
+			self.val += simps([self.cache[1][0], self.cache[0][0],              meas                ],
+							  [        0       , self.cache[1][1], self.cache[1][1]+self.cache[0][1]])
+		self.cache[1] = self.cache[0]
+		self.cache[0] = (meas,dt)
+
+		# Cap
 		if lowerbound is not None:
 			self.val = max(self.val,lowerbound)
 		if upperbound is not None:

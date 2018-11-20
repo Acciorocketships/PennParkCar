@@ -46,7 +46,7 @@ class MainLoop:
 		self.printfreq = 0.1
 		self.manual = False
 		self.threads = {'gps': True, 'vision': True, 'filter': True, 'map': True,
-						'control': True, 'send': True, 'receive': True, 'print': True}
+						'control': True, 'communication': True, 'print': True}
 
 
 	def run(self):
@@ -69,12 +69,9 @@ class MainLoop:
 		if self.threads['print']:
 			printThread = Thread(target=self.printloop)
 			printThread.start()
-		if self.threads['send']:
-			sendThread = Thread(target=self.send)
-			sendThread.start()
-		if self.threads['receive']:
-			receiveThread = Thread(target=self.receive)
-			receiveThread.start()
+		if self.threads['communication']:
+			message Thread = Thread(target=self.communication)
+			messageThread.start()
 
 		code.interact(local=locals())
 
@@ -145,6 +142,8 @@ class MainLoop:
 
 		while self.threads['gps']:
 			mapData = self.map.predictPos(self.inputs['posGPS'])
+			if mapData['Prediction'] is None:
+				continue
 			self.globalvars['roadStart'] = mapData['Road Start']
 			self.globalvars['roadEnd'] = mapData['Road End']
 			self.globalvars['posGPS'] = mapData['Prediction']
@@ -217,11 +216,11 @@ class MainLoop:
 					sleep(1)
 
 
-	def receive(self):
-		while self.threads['receive']:
+	def communication(self):
+		while self.threads['communication']:
 			self.message.recieve()
 			self.inputs['psiIMUdot'] = self.message.gyroz
-			self.inputs['posGPS'] = self.map.deg2meters(self.message.gpsLat, self.message.gpsLon)
+			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
 			sleep(0.05)
 			self.message.manual = self.manual
 			self.message.desHeading = self.psid
@@ -230,10 +229,6 @@ class MainLoop:
 			self.message.estSpeed = self.localvars['vel']
 			self.message.send()
 			sleep(0.05)			
-
-
-	def send(self):
-                pass
 
 
 	def printvar(self,var):
