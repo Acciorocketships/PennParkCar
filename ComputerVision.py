@@ -10,7 +10,7 @@ class Vision:
 		self.setRT()
 		self.setCam()
 		self.img = None
-		self.markupimg = False
+		self.markupimg = True
 
 
 	def setCam(self,focal=3.5E-3,fov=65,res=(720,1280)):
@@ -158,11 +158,11 @@ class Vision:
 		worldedge = self.transform(self.imgcenter(edge))
 		self.img = img
 		if self.markupimg:
-			imgshow = np.copy(img)
-			maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
-			if worldedge is not None:
-				maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
-			self.img = maskedimg
+                    imgshow = np.copy(img)
+                    maskedimg = Stream.mask(mask,imgshow,alpha=0.3)
+                    if worldedge is not None:
+                            maskedimg = Stream.mark(maskedimg, (tuple(edge[0]),tuple(edge[1])), color=(0,255,0))
+                    self.img = maskedimg
 		return worldedge
 
 

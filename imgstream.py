@@ -44,6 +44,7 @@ class Stream:
         self.stream = cv2.VideoCapture(0) 
       elif self.mode == 'pi':
         self.stream = picamera.PiCamera()
+        self.stream.resolution = (640,480)
  
  
     # 'Private' Functions 
@@ -116,7 +117,7 @@ class Stream:
     def pi(self):
       try:
         image = picamera.array.PiRGBArray(self.stream)
-        self.stream.capture(image, 'rgb')
+        self.stream.capture(image, 'bgr')
         return np.array(image.array)
       except Exception as error:
         print(error)

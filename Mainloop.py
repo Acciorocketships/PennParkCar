@@ -20,10 +20,10 @@ class MainLoop:
 
 	def __init__(self):
 		try:
-			self.message = Message()
-			self.joystick = ManualControl()
+                    self.message = Message()
+		    self.joystick = ManualControl()
 		except:
-			pass
+		    pass
 		self.map = Map()
 		self.cv = Vision()
 		self.planner = Planner()
@@ -80,7 +80,8 @@ class MainLoop:
 		for img in self.imgstream:
 			if not self.threads['vision']:
 				break
-			Stream.show(img,name="PiCam",pause=False)
+			# if self.cv.img is not None:
+                        #    Stream.show(self.cv.img,name="PiCam",pause=False)
 			# Process Image
 			edge = self.cv.find(img) # edge = ((x1,y1),(x2,y2))
 			# Get Distance from edge and Psi relative to edge
@@ -223,7 +224,7 @@ class MainLoop:
 
 	def communication(self):
 		while self.threads['communication']:
-			self.message.recieve()
+			self.message.receive()
 			self.inputs['psiIMUdot'] = -self.message.gyroz
 			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
 			sleep(0.05)

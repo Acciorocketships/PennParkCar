@@ -30,8 +30,8 @@ def getFloatData(oldFloats):
         newFloats.append(bytes_2_float(data_received, 4))
         newFloats.append(bytes_2_float(data_received, 5))
     except:
-        print("error reading float data")
-        newFloats = oldFloats;
+        # print("error reading float data")
+        newFloats = oldFloats
 
     return newFloats
 
@@ -46,8 +46,8 @@ def getByteData(oldBytes):
         newBytes.append(data_received[2])
         newBytes.append(data_received[3])
     except:
-        print("error reading byte data")
-        newBytes = oldBytes;
+        # print("error reading byte data")
+        newBytes = oldBytes
 
     return newBytes
 
@@ -59,7 +59,8 @@ def putByteList(byteList):
     try:
         bus.write_i2c_block_data(address, 255, byteList)
     except:
-        print("error writing commands")
+        pass
+        # print("error writing commands")
     return None
 
 #
@@ -95,7 +96,7 @@ class Message:
         message =desHeading + estHeading + desSpeed + estSpeed
         #print( list(message))
         putByteList([self.manual] + list(message))
-    def recieve(self):
+    def receive(self):
         recievedData = getFloatData([self.gpsLat, self.gpsLon, self.gpsVelocity, self.gyrox, self.gyroy, self.gyroz])
         self.gpsLat =  recievedData[0]
         self.gpsLon = recievedData[1]
