@@ -107,9 +107,9 @@ class MainLoop:
 	def filter(self):
 		lasttime = Time()
 		psiIMU = Integrator()
-		psi = Filter(wc=10)
-		xpos = Filter(wc=5)
-		ypos = Filter(wc=5)
+		psi = Filter(wc=1)
+		xpos = Filter(wc=float('inf'))
+		ypos = Filter(wc=float('inf'))
 
 		while self.threads['filter']:
 			dt = Time() - lasttime
@@ -121,6 +121,8 @@ class MainLoop:
 				self.localvars['psiIMU'] = psiIMU.val
 			else:
 				print("psiIMUdot is NaN")
+			if isnan(self.localvars['vel']):
+                            self.localvars['vel'] = 0
 			# Psi
 			psi.lowmeas = self.localvars['psiCAM']
 			psi.highmeas = self.localvars['psiIMU']
@@ -227,6 +229,7 @@ class MainLoop:
 			self.message.receive()
 			self.inputs['psiIMUdot'] = -self.message.gyroz
 			self.inputs['posGPS'] = self.map.deg2meters([self.message.gpsLat, self.message.gpsLon])
+			self.localvars['vel'] = self.message.vel
 			sleep(0.05)
 			self.message.manual = self.manual
 			self.message.desHeading = self.psid
@@ -256,15 +259,6 @@ class MainLoop:
 
 	def stop(self,thread):
 		self.threads[thread] = False
-
-
-	def showimg(self):
-		try:
-			self.cv.markupimg = True
-			while True:
-				Stream.show(self.cv.img,name="Camera",shape=(720,1280),pause=False)
-		except:
-			self.cv.markupimg = False
 
 
 ## Helper Functions ##

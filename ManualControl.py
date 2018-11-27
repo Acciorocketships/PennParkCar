@@ -15,29 +15,26 @@ class ManualControl:
         self.joystick.init()
         self.toggleT = False
         self.toggleM = False
+        self.lastval = 0
 
     def update(self):
 
         pygame.event.pump()
 
         #manual button
-        if(self.joystick.get_button(9) == 1 and self.toggleM == False):
+        buttonval = self.joystick.get_button(9)
+        if(buttonval == 1 and self.lastval == 0 and self.toggleM == False):
             self.manual = 1
             self.toggleM = True
-        elif(self.joystick.get_button(9) == 0 and self.toggleM == False):
+        elif(buttonval == 1 and self.lastval == 0 and self.toggleM == True):
             self.manual = 0
             self.toggleM = False
-        elif(self.joystick.get_button(9) == 1 and self.toggleM == True):
-            self.manual = 0
-            self.toggleM = False
-
-        elif(self.joystick.get_button(9) == 0 and self.toggleM == True):
-            self.manual = 1
-            self.toggleM = True
+        self.lastval = buttonval
+            
         pygame.event.pump()
 
         self.servoAngle = int(30*self.joystick.get_axis(0))
-        self.velocity = int(10*max(0,self.joystick.get_axis(1)))
+        self.velocity = max(0,self.joystick.get_axis(1))
         pygame.event.pump()
 
         #trigger input

@@ -84,7 +84,7 @@ class Message:
         
         self.gpsLat = 0
         self.gpsLon = 0
-        self.gpsVelocity = 0
+        self.vel = 0
         self.gyrox = 0
         self.gyroy = 0
         self.gyroz = 0
@@ -97,10 +97,10 @@ class Message:
         #print( list(message))
         putByteList([self.manual] + list(message))
     def receive(self):
-        recievedData = getFloatData([self.gpsLat, self.gpsLon, self.gpsVelocity, self.gyrox, self.gyroy, self.gyroz])
+        recievedData = getFloatData([self.gpsLat, self.gpsLon, self.vel, self.gyrox, self.gyroy, self.gyroz])
         self.gpsLat =  recievedData[0]
         self.gpsLon = recievedData[1]
-        self.gpsVelocity = recievedData[2]
+        self.vel = recievedData[2]
         self.gyrox = recievedData[3]
         self.gyroy = recievedData[4]
         self.gyroz = recievedData[5]
