@@ -1,5 +1,6 @@
 from time import time as Time
 from scipy.integrate import simps
+import numpy as np
 
 class Filter:
 
@@ -17,10 +18,19 @@ class Filter:
 		self.time = Time()
 		alpha = 1 / (1 + self.wc * dt)
 		filterval = (alpha) * (self.filterval) + (1-alpha) * (self.lowmeas - self.highmeas)
+		
+		if isinstance(filterval,np.ndarray):
+                    if np.any(np.isnan(filterval)):
+                        return self.val
+                else:
+                    if np.isnan(filterval):
+                        return self.val
+                    
 		if update:
 			self.filterval = filterval
 		self.val = filterval + self.highmeas
 		return self.val
+
 
 
 class Integrator:
@@ -32,42 +42,60 @@ class Integrator:
 		self.offset = 0
 		self.numcalib = 0
 
+
 	def calibrate(self,meas):
-		self.offset = (self.offset * self.numcalib + meas) / (self.numcalib + 1)
-		self.numcalib += 1
+            # Catch NaN
+            if isinstance(meas,np.ndarray):
+                if np.any(np.isnan(meas)):
+                    return
+            else:
+                if np.isnan(meas):
+                    return
+        
+            self.offset = (self.offset * self.numcalib + meas) / (self.numcalib + 1)
+            self.numcalib += 1
+
 
 	def update(self,meas,dt=None,lowerbound=None,upperbound=None):
-		
-		# Get Time
-		if dt is None:
-			dt = Time() - self.time
-		self.time = Time()
+        
+            # Catch NaN
+            if isinstance(meas,np.ndarray):
+                if np.any(np.isnan(meas)):
+                    return self.val
+            else:
+                if np.isnan(meas):
+                    return self.val
+            
+            # Get Time
+            if dt is None:
+                    dt = Time() - self.time
+            self.time = Time()
 
-		# Undo Offset
-		meas = meas - self.offset
-		
-		# Integrate
-		if self.cache[0][0] is None and self.cache[1][0] is None:
-			self.val += meas * dt
-		elif self.cache[1][0] is None:
-			self.val += simps([self.cache[0][0],        meas     ],
-							  [       0        , self.cache[0][1]])
-		else:
-			self.val += simps([self.cache[1][0], self.cache[0][0],              meas                ],
-							  [        0       , self.cache[1][1], self.cache[1][1]+self.cache[0][1]])
-		self.cache[1] = self.cache[0]
-		self.cache[0] = (meas,dt)
+            # Undo Offset
+            meas = meas - self.offset
+            
+            # Integrate
+            if self.cache[0][0] is None and self.cache[1][0] is None:
+                    self.val += meas * dt
+            elif self.cache[1][0] is None:
+                    self.val += simps([self.cache[0][0],        meas     ],
+                                                      [       0        , self.cache[0][1]])
+            else:
+                    self.val += simps([self.cache[1][0], self.cache[0][0],              meas                ],
+                                                      [        0       , self.cache[1][1], self.cache[1][1]+self.cache[0][1]])
+            self.cache[1] = self.cache[0]
+            self.cache[0] = (meas,dt)
 
-		# Cap
-		if lowerbound is not None:
-			self.val = max(self.val,lowerbound)
-		if upperbound is not None:
-			self.val = min(self.val,upperbound)
+            # Cap
+            if lowerbound is not None:
+                    self.val = max(self.val,lowerbound)
+            if upperbound is not None:
+                    self.val = min(self.val,upperbound)
 
-		# print("offset:", self.offset, "meas:", meas, "val:", self.val)
-		return self.val
+            # print("offset:", self.offset, "meas:", meas, "val:", self.val)
+            return self.val
 
 
 if __name__ == '__main__':
-	f = Integrator()
-	import code; code.interact(local=locals())
+    f = Integrator()
+    import code; code.interact(local=locals())

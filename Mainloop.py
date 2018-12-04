@@ -40,13 +40,13 @@ class MainLoop:
 						   'road': (None,None), 'roadStart': np.array([0,0]), 'roadEnd': np.array([0,0])}
 		# Outputs
 		self.psid = 0
-		self.veld = 0
+		self.veld = 0.5
 		# Options
 		self.printlist = {}
 		self.printfreq = 0.1
 		self.manual = False
-		self.threads = {'gps': True, 'vision': True, 'filter': True, 'map': True,
-						'control': True, 'communication': True, 'print': True}
+		self.threads = {'gps': False, 'vision': True, 'filter': True, 'map': False,
+				'control': False, 'communication': True, 'print': True}
 
 
 	def run(self):
@@ -108,19 +108,20 @@ class MainLoop:
 		lasttime = Time()
 		psiIMU = Integrator()
 		psi = Filter(wc=1)
-		xpos = Filter(wc=float('inf'))
+		xpos = Filter(wc=0) # inf uses low measurement, 0 uses high measurement
 		ypos = Filter(wc=float('inf'))
 
 		while self.threads['filter']:
 			dt = Time() - lasttime
 			lasttime = Time()
 			# Psi Integrator
-			if not isnan(self.inputs['psiIMUdot']):
-				psiIMU.calibrate(self.inputs['psiIMUdot'])
-				psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
-				self.localvars['psiIMU'] = psiIMU.val
-			else:
-				print("psiIMUdot is NaN")
+			if abs(self.inputs['psiIMUdot']) < 1000:
+                            # if not isnan(self.inputs['psiIMUdot']):
+                            psiIMU.calibrate(self.inputs['psiIMUdot'])
+                            psiIMU.update(self.inputs['psiIMUdot'],dt=dt)
+                            self.localvars['psiIMU'] = psiIMU.val
+                        else:
+                            print(self.inputs['psiIMUdot'])
 			if isnan(self.localvars['vel']):
                             self.localvars['vel'] = 0
 			# Psi
@@ -167,7 +168,7 @@ class MainLoop:
 			self.globalvars['progressFrac'] = mapData["Fraction Along Road"]
 			self.globalvars['progress'] = mapData["Distance Along Road"]
 			self.globalvars['intersection'] = ((self.globalvars['progressFrac'] * roadLength < self.planner.intersectionRadius) or
-			 								  ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
+                                                          ((1-self.globalvars['progressFrac']) * roadLength < self.planner.intersectionRadius))
 			sleep(0.2)
 
 
